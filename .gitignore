@@ -1,0 +1,6 @@
+.env
+db/
+.idea/
+Tokenization/tok400.model
+Tokenization/tok400.vocab
+Tokenization/toy.txt
