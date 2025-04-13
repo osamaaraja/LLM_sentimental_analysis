@@ -2,24 +2,24 @@ import streamlit as st
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import os
-from langchain.prompts import PromptTemplate
-from langchain.chains.llm import LLMChain
-from langchain.chains import SequentialChain
 from langchain_community.vectorstores import Chroma
 from langchain.schema import SystemMessage, HumanMessage
 import pandas as pd
 from PIL import Image
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+import nltk
+from nltk.corpus import stopwords
+import re
+nltk.download('stopwords')
 
-# Load environment variables
 load_dotenv()
 openai_api_key = os.getenv('OPEN_API_KEY')
 
 if not openai_api_key:
     raise ValueError("OpenAI API key not found in environment variables. Please set the OPENAI_API_KEY in your .env file.")
 
-persistent_directory = os.path.join(os.getcwd(), "chroma_db")
+persistent_directory = os.path.join(os.getcwd(),"..//", "chroma_db")
 embeddings = OpenAIEmbeddings(
     model="text-embedding-ada-002",
     api_key=openai_api_key
@@ -30,25 +30,25 @@ try:
         persist_directory=persistent_directory,
         embedding_function=embeddings
     )
-    # If successful, you can now retrieve from db
+
     print("Chroma DB loaded successfully!")
 except Exception as e:
     print(f"Could not load Chroma DB: {e}")
     db = None
 
-# Prompt-engineered system message
 prompt_engineered_system = """You are a helpful assistant specialized in sentiment analysis for e-commerce feedback.
 For any given feedback, respond with:
-1) Overall Sentiment: Positive, Negative, or Neutral
-2) A short explanation (1-2 sentences)
-3) A numeric sentiment score from 1-5 (1 = very negative, 3 = neutral, 5 = very positive)
+1) Sentiment: Positive, Neutral, or Negative
+2) Explanation: (1-2 sentences)
+3) A numeric score: (1-5)
+4) Feedback category: (one of: Pricing, Shipment delays, Delivery issues, Service, Technical issues, Product assortment, Packaging, Employees behavior, Product quality, Other)
 
 Format your response exactly like this (no extra text):
 Sentiment: <Positive/Negative/Neutral>
 Explanation: <short explanation>
 Score: <1-5>
+Category: <Pricing/Shipment delays/Delivery issues/Service/Technical issues/Product assortment/Packaging/Employees behavior/Product quality/Other>
 """
-
 system_message_pe = SystemMessage(content=prompt_engineered_system)
 
 model_pe = ChatOpenAI(
@@ -56,70 +56,95 @@ model_pe = ChatOpenAI(
     api_key=openai_api_key,
     temperature=0.0
 )
-def retrieve_product_context(user_feedback: str, top_k=2) -> str:
-    """
-    Query the Chroma vector store for the top-k relevant chunks
-    that might help GPT better understand or reference the products.
-    """
+
+def retrieve_product_docs(user_query: str, product_name: str, top_k=5) -> list:
     if not db:
-        # If db failed to load, just return empty context
-        return ""
-
-    docs = db.similarity_search(user_feedback, k=top_k)
-    # Combine the text of these docs
-    context = "\n".join([doc.page_content for doc in docs])
-    return context
-
-
-#def analyze_sentiment_prompt_engineered(text: str) -> str:
-#   """Send the feedback text to GPT with the prompt-engineered system message."""
-#    user_message = HumanMessage(content=f"Feedback: {text}")
-#    response = model_pe([system_message_pe, user_message])
-#    return response.content.strip()
+        return []
+    # Build a retriever that uses the filter
+    retriever = db.as_retriever(
+        search_type="similarity",
+        search_kwargs={
+            "k": top_k,
+            "filter": {"product": product_name}  # EXACT match
+        }
+    )
+    docs = retriever.get_relevant_documents(user_query)
+    return docs
 
 def analyze_sentiment_prompt_engineered(text: str) -> str:
-    """Send the feedback text to GPT with the prompt-engineered system message."""
-    prompt = (
-            f"""Given the customer feedback below, identify:
-    1. Sentiment (positive, neutral, or negative)
-    2. Explanation for your sentiment
-    3. A numeric score (1-5)
-    4. Feedback category (one of: Pricing, Shipment delays, Delivery issues, service, Technical issues, Other)
-    
-    Feedback: {text}
-    Answer:"""
-        )
-
-    user_message = HumanMessage(content=prompt)
+    user_message = HumanMessage(content=f"Feedback: {text}")
     response = model_pe([system_message_pe, user_message])
     return response.content.strip()
 
-def extract_sentiment_fields(response: str):
-    # This is a quick parsing approach — adjust if the formatting changes
-    try:
-        lines = response.split("\n")
-        sentiment = next((line.split(":")[1].strip() for line in lines if "Sentiment" in line), "Unknown")
-        explanation = next((line.split(":")[1].strip() for line in lines if "Explanation" in line), "")
-        score = next((line.split(":")[1].strip() for line in lines if "Score" in line), "0")
-        category = next((line.split(":")[1].strip() for line in lines if "Category" in line), "Other")
-        return sentiment, explanation, score, category
-    except Exception as e:
-        print("Parsing error:", e)
-        return "Unknown", "", "0", "Other"
+def extract_sentiment_fields(gpt_output: str):
 
-def generate_wordcloud(text_data: str):
-    """Generate a word cloud from text_data."""
-    wc = WordCloud(width=800, height=400, background_color="white").generate(text_data)
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.imshow(wc, interpolation='bilinear')
+    sentiment = "Unknown"
+    explanation = ""
+    score = ""
+    category = "Other"
+
+    lines = gpt_output.splitlines()
+    for line in lines:
+        lower_line = line.lower().strip()
+        if lower_line.startswith("sentiment:"):
+            sentiment = line.split(":", 1)[1].strip()
+        elif lower_line.startswith("explanation:"):
+            explanation = line.split(":", 1)[1].strip()
+        elif lower_line.startswith("score:"):
+            score = line.split(":", 1)[1].strip()
+        elif lower_line.startswith("category:"):
+            category = line.split(":", 1)[1].strip()
+
+    return sentiment, explanation, score, category
+
+def clean_text(text):
+
+    text = text.lower()
+    text = re.sub(r"[^\w\s]", "", text)
+    tokens = text.split()
+    stopwords_list = set(stopwords.words("english"))
+    tokens = [tok for tok in tokens if tok not in stopwords_list]
+    tokens = [tok for tok in tokens if len(tok) > 2]
+
+    return tokens
+def generate_cleaned_wordcloud(feedbacks):
+
+    all_tokens = []
+    for line in feedbacks:
+        tokens = clean_text(line)
+        all_tokens.extend(tokens)
+
+    cleaned_text = " ".join(all_tokens)
+
+    wordcloud = WordCloud(
+        width=800,
+        height=400,
+        background_color="white",
+        collocations=False,
+        min_font_size=10
+    ).generate(cleaned_text)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.imshow(wordcloud, interpolation="bilinear")
     ax.axis("off")
+
     return fig
 
+def display_logo_and_header(logo_path: str, logo_width: int = 80):
+
+    if not os.path.exists(logo_path):
+        st.warning(f"Logo file not found: {logo_path}")
+        return
+    col1, col2 = st.columns([1, 4])
+
+    with col1:
+        st.image(logo_path, width=logo_width)
+
+    with col2:
+        st.write("")
+
 def display_star_rating(score: float, max_stars=5) -> str:
-    """
-    Convert a numeric score (1–5) into a string of star icons.
-    Example: 4 -> "★★★★☆"
-    """
+
     rating = int(round(score))
     rating = min(max(rating, 1), max_stars)
     filled_star = "★"
@@ -143,20 +168,21 @@ PRODUCTS = [
     "SkyTune Sonic Pro X1",
     "DustMaster Ultra 500",
     "QuantumTech A12 Notebook",
-    "HyperKlick FX-21"
+    "HyperKlick FX-21",
+    "NanoMouse Prime XR"
 ]
 
-# We can let the user pick a product from the sidebar
 st.sidebar.title("Product Info")
 selected_product = st.sidebar.selectbox("Select a product", PRODUCTS)
-
-# Provide a text input for user to type a question or query about that product
 user_query = st.sidebar.text_input("Ask about this product:")
+
 if st.sidebar.button("Search Product Info"):
     if user_query.strip():
-        retrieved_docs = retrieve_product_context(user_query)
+        # Retrieve docs ONLY for that product
+        docs = retrieve_product_docs(user_query, selected_product, top_k=5)
+
         st.sidebar.write("### Relevant Chunks:")
-        for i, doc in enumerate(retrieved_docs, start=1):
+        for i, doc in enumerate(docs, start=1):
             st.sidebar.write(f"**Document {i}:**\n{doc.page_content}")
             if doc.metadata:
                 st.sidebar.write(f"_Source_: {doc.metadata.get('source', 'Unknown')}")
@@ -164,8 +190,14 @@ if st.sidebar.button("Search Product Info"):
     else:
         st.sidebar.warning("Please enter a query to search for product info.")
 
+
 def main():
     st.title('Prompt-Engineered GPT: Sentiment Analysis')
+
+    image = 'OTH_Logo_farbig__zweizeilig_.jpg'
+    image_path = os.path.join(os.getcwd(), '..//', image)
+
+    display_logo_and_header(image_path, logo_width=150)
 
     image = 'smileys.jpg'
     image_path = os.path.join(os.getcwd(), '..//', image)
@@ -193,22 +225,19 @@ def main():
     user_input = st.text_area("Enter a single feedback here:")
     if st.button("Analyze Feedback"):
         if user_input.strip():
-            # Call GPT
+
             gpt_output = analyze_sentiment_prompt_engineered(user_input)
-            # Parse it
             sentiment, explanation, score_str, category = extract_sentiment_fields(gpt_output)
 
             st.write("**GPT Output**:")
             st.write(gpt_output)
             st.write(f"**Category**: {category}")
 
-            # Show structured results if they exist
             if sentiment != "Unknown":
                 st.write(f"**Sentiment**: {sentiment}")
                 st.write(f"**Explanation**: {explanation}")
                 st.write(f"**Numeric Score**: {score_str}")
 
-                # Display star rating and smiley
                 try:
                     score_val = float(score_str)
                     star_str = display_star_rating(score_val)
@@ -225,7 +254,6 @@ def main():
     st.subheader("Bulk Analysis from Excel/CSV")
     uploaded_file = st.file_uploader("Upload your file (.xlsx or .csv)", type=["xlsx", "csv"])
     if uploaded_file is not None:
-        # Read into DataFrame
         if uploaded_file.name.endswith(".xlsx"):
             df = pd.read_excel(uploaded_file)
         else:
@@ -234,7 +262,6 @@ def main():
         st.write("**Sample of your data** (first 5 rows):")
         st.dataframe(df.head())
 
-        # Select the text column for analysis
         text_col = st.selectbox("Select the column containing feedback text:", df.columns)
 
         if st.button("Run Bulk GPT Analysis"):
@@ -262,10 +289,8 @@ def main():
             st.write("**Analysis Results (all rows)**:")
             st.dataframe(data_copy)
 
-            # Convert GPT_Score to numeric
             data_copy["GPT_Score_Num"] = pd.to_numeric(data_copy["GPT_Score"], errors='coerce')
 
-            # 1) Histogram of numeric scores
             st.subheader("Histogram of GPT-Assigned Scores")
             fig_hist, ax_hist = plt.subplots()
             data_copy["GPT_Score_Num"].plot(kind='hist', bins=5, rwidth=0.8, ax=ax_hist)
@@ -290,10 +315,19 @@ def main():
             ax_cat.set_ylabel("Count")
             st.pyplot(fig_cat)
 
-            st.subheader("Word Cloud of Feedback")
-            all_text = " ".join(data_copy[text_col].astype(str).tolist())
-            wc_fig = generate_wordcloud(all_text)
-            st.pyplot(wc_fig)
+            st.subheader("Word Cloud")
+
+            feedback_lines = []
+            for idx, row in data_copy.iterrows():
+                original_text = str(row[text_col])
+                category = str(row["GPT_Category"])
+                category = category.replace(" ", "_").lower()
+
+                combined_text = original_text + " " + category
+                feedback_lines.append(combined_text)
+
+            fig_wc = generate_cleaned_wordcloud(feedback_lines)
+            st.pyplot(fig_wc)
 
             st.success("Bulk analysis completed!")
 
