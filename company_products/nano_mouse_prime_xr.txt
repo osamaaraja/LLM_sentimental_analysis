@@ -1,0 +1,26 @@
+Product Name: NanoMouse Prime XR
+Manufacturer: MacroTech Innovations
+Model Number: NM-PRIME-XR-2025
+Launch Status: Confidential prototype; not publicly listed
+
+Key Features:
+• Hyper-precision laser sensor (up to 26,000 DPI)
+• Tri-mode connectivity (2.4 GHz wireless, Bluetooth 5.3, and USB-C wired)
+• Battery Life: Up to 80 hours on a single charge in power-save mode
+• Adjustable lift-off distance (1–3 mm)
+• Onboard Memory: 4 customizable profiles for DPI, macros, and RGB lighting
+• Lightweight chassis: 75 grams total
+• RGB lighting ring around the scroll wheel (16.8 million color options)
+
+Additional Details:
+• “AirFlow Grip” side panels for improved ventilation
+• Magnetic side button modules (hot-swappable for left- or right-handed users)
+• Silent-click switches rated at 60 million clicks
+• Smart Sleep function that powers down RGB after 3 minutes of inactivity
+• Compatible with MacroTech’s SynChrome software for advanced customization
+• Warranty: 1-year limited coverage on sensor and battery
+
+Confidential Notice:
+This NanoMouse Prime XR specification is proprietary to MacroTech Innovations, 
+provided for internal testing only. Unauthorized distribution or use of the information 
+is strictly prohibited. 

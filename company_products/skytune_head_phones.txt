@@ -1,0 +1,12 @@
+Product Name: SkyTune Sonic Pro X1
+Driver Type: Dual-diaphragm dynamic drivers
+Frequency Range: 5Hz - 45kHz
+Noise Cancellation: Active hybrid ANC with dual microphones
+Battery Life: Up to 36 hours (ANC off) or 28 hours (ANC on)
+Charging Port: USB-C fast charge (10 min charge = 3 hours playback)
+Audio Codec Support: AAC, SBC, aptX
+Bluetooth Version: 5.2
+Headband Material: Aerospace-grade aluminum frame with memory foam padding
+Foldable Design: 90-degree rotating ear cups
+Weight: 282 grams
+Confidential Release: Internal distribution only

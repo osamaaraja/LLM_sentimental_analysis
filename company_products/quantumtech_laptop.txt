@@ -1,0 +1,12 @@
+Product Name: QuantumTech A12 Notebook
+Processor: QuantumFlex i6 (Quad-Core 3.2 GHz)
+RAM: 16GB DDR5 (expandable up to 32GB)
+Storage: 512GB NVMe SSD (with additional M.2 slot)
+Graphics: Radeon Helios i850 integrated GPU
+Display: 14-inch IPS (1920 x 1200) with 120Hz refresh rate
+Battery Life: Up to 10 hours of typical usage
+Ports: 2x USB-C, 1x USB-A 3.2, 1x HDMI 2.0, microSD slot
+Webcam: 1080p HD with privacy shutter
+Weight: 1.25 kg (2.76 lbs)
+Operating System: Poseidon OS (based on Linux kernel 5.11)
+Confidential Security Patch: Not publicly available

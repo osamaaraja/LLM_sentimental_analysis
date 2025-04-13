@@ -1,0 +1,12 @@
+Product Name: HyperKlick FX-21
+Switch Type: Opto-mechanical with adjustable actuation point
+Key Rollover: Full NKRO with anti-ghosting
+Backlight: Per-key RGB with 16.8 million color options
+Software: HyperKlick Control Center for macro customization
+Build Material: Aluminum top plate with reinforced plastic frame
+Polling Rate: 1000 Hz (1 ms response time)
+Cable: Detachable USB-C braided cable
+Additional Keys: 5 dedicated macro keys + volume wheel
+Dimensions: 17.5 x 5.2 x 1.4 inches
+Weight: 1.1 kg (2.4 lbs)
+Confidential Feature: Firmware Overdrive only for in-house testing
