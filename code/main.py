@@ -13,6 +13,19 @@ from nltk.corpus import stopwords
 import re
 nltk.download('stopwords')
 
+cwd = os.getcwd()
+uploaded_file = 'Feedback_Dataset.xlsx'
+file_path = os.path.join(cwd, '../', uploaded_file)
+print(file_path)
+df = pd.read_excel(file_path)
+print(df.info())
+print(df.head())
+print(df.describe())
+print(df.columns)
+
+exit()
+
+
 load_dotenv()
 openai_api_key = os.getenv('OPEN_API_KEY')
 
@@ -258,6 +271,9 @@ def main():
             df = pd.read_excel(uploaded_file)
         else:
             df = pd.read_csv(uploaded_file)
+
+        # Select how many rows of data need to be evaluated
+        df = df.sample(n=500, random_state=42).reset_index(drop=True)
 
         st.write("**Sample of your data** (first 5 rows):")
         st.dataframe(df.head())
