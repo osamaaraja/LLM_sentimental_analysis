@@ -288,14 +288,25 @@ def main():
             scores = []
             categories = []
 
-            for _, row in data_copy.iterrows():
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
+            total_rows = len(data_copy)
+
+            for idx, row in data_copy.iterrows():
                 feedback_text = str(row[text_col])
                 result = analyze_sentiment_prompt_engineered(feedback_text)
                 s, e, sc, cat = extract_sentiment_fields(result)
+
                 sentiments.append(s)
                 explanations.append(e)
                 scores.append(sc)
                 categories.append(cat)
+
+                # Update progress bar and status
+                progress = (idx + 1) / total_rows
+                progress_bar.progress(progress)
+                status_text.text(f"Processing {idx + 1}/{total_rows} entries...")
 
             data_copy["GPT_Sentiment"] = sentiments
             data_copy["GPT_Explanation"] = explanations
