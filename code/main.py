@@ -13,18 +13,6 @@ from nltk.corpus import stopwords
 import re
 nltk.download('stopwords')
 
-cwd = os.getcwd()
-uploaded_file = 'Feedback_Dataset.xlsx'
-file_path = os.path.join(cwd, '../', uploaded_file)
-print(file_path)
-df = pd.read_excel(file_path)
-print(df.info())
-print(df.head())
-print(df.describe())
-print(df.columns)
-
-exit()
-
 
 load_dotenv()
 openai_api_key = os.getenv('OPEN_API_KEY')
