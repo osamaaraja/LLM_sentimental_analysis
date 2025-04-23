@@ -232,7 +232,7 @@ def main():
 
             st.write("**GPT Output**:")
             st.write(gpt_output)
-            st.write(f"**Category**: {category}")
+            #st.write(f"**Category**: {category}") # additional printing of the category
 
             if sentiment != "Unknown":
                 st.write(f"**Sentiment**: {sentiment}")
