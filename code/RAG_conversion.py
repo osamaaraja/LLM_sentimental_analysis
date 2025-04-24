@@ -34,7 +34,7 @@ for file_name in os.listdir(folder_path):
 if not file_paths:
     raise ValueError(f"No .txt files found in '{folder_path}'.")
 
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+text_splitter = CharacterTextSplitter(chunk_size=300, chunk_overlap=50)
 all_docs = []
 
 for path in file_paths:
