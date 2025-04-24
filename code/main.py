@@ -313,6 +313,7 @@ def main():
             ax_hist.set_ylabel("Count")
             ax_hist.set_title("Distribution of GPT-Assigned Scores")
             st.pyplot(fig_hist)
+            fig_hist.savefig("histogram.pdf", format="pdf")
 
             st.subheader("Pie Chart of Sentiment Labels")
             label_counts = data_copy["GPT_Sentiment"].value_counts()
@@ -320,6 +321,7 @@ def main():
             ax_pie.pie(label_counts, labels=label_counts.index, autopct='%1.1f%%', startangle=140)
             ax_pie.axis("equal")
             st.pyplot(fig_pie)
+            fig_pie.savefig("pie_chart.pdf", format="pdf")
 
             st.subheader("Category Breakdown")
             category_counts = data_copy["GPT_Category"].value_counts()
@@ -329,6 +331,7 @@ def main():
             ax_cat.set_xlabel("Category")
             ax_cat.set_ylabel("Count")
             st.pyplot(fig_cat)
+            fig_cat.savefig("category_breakdown.pdf", format="pdf")
 
             st.subheader("Word Cloud")
 
@@ -343,6 +346,7 @@ def main():
 
             fig_wc = generate_cleaned_wordcloud(feedback_lines)
             st.pyplot(fig_wc)
+            fig_wc.savefig("word_cloud.pdf", format="pdf")
 
             st.success("Bulk analysis completed!")
 
