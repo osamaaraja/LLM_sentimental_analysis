@@ -346,6 +346,8 @@ def main():
             ax_cat.set_title("Feedback Categories")
             ax_cat.set_xlabel("Category")
             ax_cat.set_ylabel("Count")
+            ax_cat.tick_params(axis='x', labelrotation=45)  # Rotate x-axis labels
+            fig_cat.tight_layout()
             st.pyplot(fig_cat)
             fig_cat.savefig("category_breakdown.pdf", format="pdf")
 
