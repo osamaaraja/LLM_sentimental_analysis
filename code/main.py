@@ -175,13 +175,12 @@ PRODUCTS = [
 
 st.sidebar.title("Product Info")
 selected_product = st.sidebar.selectbox("Select a product", PRODUCTS)
-user_query = st.sidebar.text_input("Ask about this product:")
 
+# Load product docs when button is clicked
 if st.sidebar.button("Search Product Info"):
-    if user_query.strip():
-        # Retrieve docs ONLY for that product
-        docs = retrieve_product_docs(user_query, selected_product, top_k=5)
+    docs = retrieve_product_docs("Product specs", selected_product, top_k=5)
 
+    if docs:
         st.sidebar.write("### Relevant Chunks:")
         for i, doc in enumerate(docs, start=1):
             st.sidebar.write(f"**Document {i}:**\n{doc.page_content}")
@@ -189,8 +188,25 @@ if st.sidebar.button("Search Product Info"):
                 st.sidebar.write(f"_Source_: {doc.metadata.get('source', 'Unknown')}")
             st.sidebar.write("---")
     else:
-        st.sidebar.warning("Please enter a query to search for product info.")
+        st.sidebar.warning("No relevant documents found.")
 
+# Input for user query and a new button for submission
+user_query = st.sidebar.text_input("Ask about this product:")
+
+if st.sidebar.button("Submit Query"):
+    if user_query.strip():
+        docs = retrieve_product_docs(user_query, selected_product, top_k=5)
+
+        if docs:
+            context = "\n\n".join([doc.page_content for doc in docs])
+            prompt = f"""Answer the following question using the product context below:\n\nContext:\n{context}\n\nQuestion: {user_query}"""
+            response = model_pe([SystemMessage(content="You are a helpful assistant."), HumanMessage(content=prompt)])
+            st.sidebar.markdown("### Answer:")
+            st.sidebar.markdown(response.content.strip())
+        else:
+            st.sidebar.warning("No relevant documents found.")
+    else:
+        st.sidebar.warning("Please enter a query to submit.")
 
 def main():
     st.title('Prompt-Engineered GPT: Sentiment Analysis')
