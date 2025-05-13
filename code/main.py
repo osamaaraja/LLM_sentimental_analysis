@@ -125,25 +125,23 @@ def clean_text(text):
     return tokens
 def generate_cleaned_wordcloud(feedbacks):
 
-    all_tokens = []
-    for line in feedbacks:
-        tokens = clean_text(line)
-        all_tokens.extend(tokens)
+    text = " ".join(feedbacks).lower()
+    # Remove punctuation
+    text = re.sub(r"[^\w\s]", "", text)
 
-    cleaned_text = " ".join(all_tokens)
-
-    wordcloud = WordCloud(
+    # Generate the word cloud, passing full stop-list
+    wc = WordCloud(
         width=800,
         height=400,
         background_color="white",
+        stopwords=ALL_STOPWORDS,
         collocations=False,
         min_font_size=10
-    ).generate(cleaned_text)
+    ).generate(text)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(wordcloud, interpolation="bilinear")
+    fig, ax = plt.subplots(figsize=(10,5))
+    ax.imshow(wc, interpolation="bilinear")
     ax.axis("off")
-
     return fig
 
 def display_logo_and_header(logo_path: str, logo_width: int = 80):
