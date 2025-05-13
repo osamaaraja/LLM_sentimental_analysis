@@ -334,6 +334,9 @@ def main():
             st.dataframe(data_copy)
 
             data_copy["GPT_Score_Num"] = pd.to_numeric(data_copy["GPT_Score"], errors='coerce')
+            # saving these scores for furhter validation
+            output_path = "bulk_analysis_results.csv"
+            data_copy.to_csv(output_path, index=False)
 
             st.subheader("Histogram of GPT-Assigned Scores")
             fig_hist, ax_hist = plt.subplots()
