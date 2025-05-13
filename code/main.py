@@ -26,8 +26,6 @@ DOMAIN_STOPS = {
 }
 
 ALL_STOPWORDS = STOPWORDS.union(nltk_stops).union(DOMAIN_STOPS)
-exit(1)
-
 
 load_dotenv()
 openai_api_key = os.getenv('OPEN_API_KEY')
