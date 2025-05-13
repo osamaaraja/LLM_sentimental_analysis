@@ -364,6 +364,31 @@ def main():
             st.pyplot(fig_cat)
             fig_cat.savefig("category_breakdown.pdf", format="pdf")
 
+            # Recommendation
+
+            st.subheader("Recommendations for Improvement")
+
+            # Compute counts and percentages
+            category_counts = data_copy["GPT_Category"].value_counts()
+            total_feedbacks = len(data_copy)
+
+            # any category over 20% of feedbacks needs urgent attention
+            THRESHOLD_PCT = 0.20
+
+            for category, count in category_counts.items():
+                pct = count / total_feedbacks
+                pct_str = f"{pct * 100:.1f}%"
+                if pct >= THRESHOLD_PCT:
+                    st.markdown(
+                        f"🔴 **{category}**: {count} feedbacks ({pct_str}) — *High volume of issues here. "
+                        f"Recommend prioritizing improvements in **{category}*.**"
+                    )
+                else:
+                    st.markdown(
+                        f"🟢 **{category}**: {count} feedbacks ({pct_str}) — *Lower volume; {category} seems relatively healthy.*"
+                    )
+
+            # Word cloud
             st.subheader("Word Cloud")
 
             feedback_lines = []
