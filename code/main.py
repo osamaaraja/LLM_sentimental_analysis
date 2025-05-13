@@ -53,15 +53,29 @@ except Exception as e:
 prompt_engineered_system = """You are a helpful assistant specialized in sentiment analysis for e-commerce feedback.
 For any given feedback, respond with:
 1) Sentiment: Positive, Neutral, or Negative
-2) Explanation: (1-2 sentences)
-3) A numeric score: (1-5)
-4) Feedback category: (one of: Pricing, Shipment delays, Delivery issues, Service, Technical issues, Product assortment, Packaging, Employees behavior, Product quality, Other)
+2) Explanation: (1–2 sentences)
+3) A numeric score: (1–5)
+4) Feedback category: One of:
+- Pricing
+- Shipment delays
+- Delivery issues
+- Service
+- Technical issues
+- Product assortment
+- Packaging
+- Employees behavior
+- Product quality: Battery Issues
+- Product quality: Build/Design Flaws
+- Product quality: Performance Issues
+- Product quality: Durability
+- Product quality: Functionality Gaps
+- Other
 
 Format your response exactly like this (no extra text):
 Sentiment: <Positive/Negative/Neutral>
 Explanation: <short explanation>
-Score: <1-5>
-Category: <Pricing/Shipment delays/Delivery issues/Service/Technical issues/Product assortment/Packaging/Employees behavior/Product quality/Other>
+Score: <1–5>
+Category: <One of the refined categories above>
 """
 system_message_pe = SystemMessage(content=prompt_engineered_system)
 
