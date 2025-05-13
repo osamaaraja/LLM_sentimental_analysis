@@ -11,7 +11,7 @@ from wordcloud import WordCloud, STOPWORDS
 import nltk
 from nltk.corpus import stopwords
 import re
-nltk.download('stopwords')
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 nltk.download('stopwords')
 nltk_stops = set(stopwords.words("english"))
@@ -155,6 +155,18 @@ def generate_cleaned_wordcloud(feedbacks):
     ax.imshow(wc, interpolation="bilinear")
     ax.axis("off")
     return fig
+
+def get_top_keywords(texts, n=3):
+
+    if not texts:
+        return []
+    vec = TfidfVectorizer(stop_words='english', max_features=50)
+    X = vec.fit_transform(texts)
+    sums = X.sum(axis=0).A1
+    features = vec.get_feature_names_out()
+    top_idx = sums.argsort()[-n:][::-1]
+    return [features[i] for i in top_idx]
+
 
 def display_logo_and_header(logo_path: str, logo_width: int = 80):
 
@@ -398,28 +410,31 @@ def main():
             fig_pq.savefig("product_quality_breakdown.pdf", format="pdf")
 
             # Recommendation
+            st.subheader("Actionable Recommendations")
 
-            st.subheader("Recommendations for Improvement")
-
-            # Compute counts and percentages
             category_counts = data_copy["GPT_Category"].value_counts()
-            total_feedbacks = len(data_copy)
+            total = len(data_copy)
 
-            # any category over 20% of feedbacks needs urgent attention
-            THRESHOLD_PCT = 0.20
+            for cat, cnt in category_counts.items():
+                pct = cnt / total
 
-            for category, count in category_counts.items():
-                pct = count / total_feedbacks
-                pct_str = f"{pct * 100:.1f}%"
-                if pct >= THRESHOLD_PCT:
-                    st.markdown(
-                        f"🔴 **{category}**: {count} feedbacks ({pct_str}) — *High volume of issues here. "
-                        f"Recommend prioritizing improvements in **{category}*.**"
+                texts = data_copy.loc[data_copy["GPT_Category"] == cat, text_col].astype(str).tolist()
+                # extract top 3 keywords
+                keywords = get_top_keywords(texts, n=3)
+                keys_str = ", ".join(keywords) if keywords else "–"
+
+                if pct >= 0.20:
+                    icon = "🔴"
+                    action = (
+                        f"**Action:** Deep dive into “{keys_str}” issues; implement targeted QA and design fixes for “{cat.split(':')[-1].strip()}.”"
                     )
                 else:
-                    st.markdown(
-                        f"🟢 **{category}**: {count} feedbacks ({pct_str}) — *Lower volume; {category} seems relatively healthy.*"
+                    icon = "🟢"
+                    action = (
+                        f"**Action:** Monitor “{keys_str}” trends; maintain current performance in “{cat.split(':')[-1].strip()}.”"
                     )
+
+                st.markdown(f"{icon} **{cat}** — {cnt} feedbacks ({pct * 100:.1f}%): {action}")
 
             # Word cloud
             st.subheader("Word Cloud")
