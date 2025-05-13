@@ -379,6 +379,24 @@ def main():
             st.pyplot(fig_cat)
             fig_cat.savefig("category_breakdown.pdf", format="pdf")
 
+            # Product quality subcategory breakdown
+            st.subheader("Product Quality Subcategory Breakdown")
+
+            # Filter only the Product Quality rows
+            pq_mask = data_copy["GPT_Category"].str.startswith("Product quality")
+            pq_counts = data_copy.loc[pq_mask, "GPT_Category"].value_counts()
+
+            # Plot the breakdown
+            fig_pq, ax_pq = plt.subplots(figsize=(8, 4))
+            ax_pq.bar(pq_counts.index, pq_counts.values, color='salmon')
+            ax_pq.set_title("Distribution of Product Quality Subcategories")
+            ax_pq.set_xlabel("Subcategory")
+            ax_pq.set_ylabel("Count")
+            ax_pq.tick_params(axis='x', rotation=45)
+            fig_pq.tight_layout()
+            st.pyplot(fig_pq)
+            fig_pq.savefig("product_quality_breakdown.pdf", format="pdf")
+
             # Recommendation
 
             st.subheader("Recommendations for Improvement")
