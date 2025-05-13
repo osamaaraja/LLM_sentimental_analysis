@@ -7,11 +7,26 @@ from langchain.schema import SystemMessage, HumanMessage
 import pandas as pd
 from PIL import Image
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud
+from wordcloud import WordCloud, STOPWORDS
 import nltk
 from nltk.corpus import stopwords
 import re
 nltk.download('stopwords')
+
+nltk.download('stopwords')
+nltk_stops = set(stopwords.words("english"))
+
+DOMAIN_STOPS = {
+    "device", "devices", "product", "products",
+    "use", "used", "using", "one", "two", "also", "would", "really", "well",
+    "get", "got", "make", "makes", "work", "working", "function", "functions",
+    "mouse", "laptop", "keyboard", "headphones", "vacuum", "cleaner",
+    "day", "days", "week", "weeks", "month", "months",
+    "overall", "just", "even", "lot", "many", "much"
+}
+
+ALL_STOPWORDS = STOPWORDS.union(nltk_stops).union(DOMAIN_STOPS)
+exit(1)
 
 
 load_dotenv()
