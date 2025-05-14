@@ -29,6 +29,20 @@ DOMAIN_STOPS = {
 
 ALL_STOPWORDS = STOPWORDS.union(nltk_stops).union(DOMAIN_STOPS)
 
+# A small template to generate an improvement suggestion
+reco_template = PromptTemplate(
+    input_variables=["category", "pct", "keywords"],
+    template="""
+You are an expert product manager.  
+Category: {category}  
+This category represents {pct:.1f}% of all feedback.  
+Top reported issues: {keywords}.  
+
+Please write a **single, concise** bullet-point recommendation (1–2 sentences) on how to improve in this area.
+"""
+)
+
+
 load_dotenv()
 openai_api_key = os.getenv('OPEN_API_KEY')
 
@@ -87,6 +101,8 @@ model_pe = ChatOpenAI(
     temperature=0.0
 )
 
+# Create a chain using your same prompt-engineered model
+reco_chain = LLMChain(llm=model_pe, prompt=reco_template)
 def retrieve_product_docs(user_query: str, product_name: str, top_k=5) -> list:
     if not db:
         return []
@@ -384,7 +400,7 @@ def main():
             st.subheader("Category Breakdown")
             category_counts = data_copy["GPT_Category"].value_counts()
             fig_cat, ax_cat = plt.subplots()
-            ax_cat.bar(category_counts.index, category_counts.values, color='skyblue')
+            ax_cat.bar(category_counts.index, category_counts.values, color='green')
             ax_cat.set_title("Feedback Categories")
             ax_cat.set_xlabel("Category")
             ax_cat.set_ylabel("Count")
@@ -414,32 +430,31 @@ def main():
             st.pyplot(fig_pq)
             fig_pq.savefig("product_quality_breakdown.pdf", format="pdf")
 
-            # Recommendation
+            # --- Dynamic, GPT-Generated Recommendations ---
             st.subheader("Actionable Recommendations")
 
             category_counts = data_copy["GPT_Category"].value_counts()
             total = len(data_copy)
 
             for cat, cnt in category_counts.items():
-                pct = cnt / total
+                pct = cnt / total * 100
 
-                texts = data_copy.loc[data_copy["GPT_Category"] == cat, text_col].astype(str).tolist()
-                # extract top 3 keywords
+                # gather texts, extract top-3 keywords
+                texts = data_copy.loc[data_copy["GPT_Category"] == cat, text_col].tolist()
                 keywords = get_top_keywords(texts, n=3)
-                keys_str = ", ".join(keywords) if keywords else "–"
+                keys_str = ", ".join(keywords)
 
-                if pct >= 0.20:
-                    icon = "🔴"
-                    action = (
-                        f"**Action:** Deep dive into “{keys_str}” issues; implement targeted QA and design fixes for “{cat.split(':')[-1].strip()}.”"
-                    )
-                else:
-                    icon = "🟢"
-                    action = (
-                        f"**Action:** Monitor “{keys_str}” trends; maintain current performance in “{cat.split(':')[-1].strip()}.”"
-                    )
+                # ask GPT to generate a recommendation
+                reco = reco_chain.run({
+                    "category": cat.split(":", 1)[-1].strip(),
+                    "pct": pct,
+                    "keywords": keys_str or "–"
+                }).strip()
 
-                st.markdown(f"{icon} **{cat}** — {cnt} feedbacks ({pct * 100:.1f}%): {action}")
+                # choose icon
+                icon = "🔴" if pct >= 20 else "🟢"
+
+                st.markdown(f"{icon} **{cat.split(':', 1)[-1].strip()}** — {cnt} feedbacks ({pct:.1f}%):  \n• {reco}")
 
             # Word cloud
             st.subheader("Word Cloud")
