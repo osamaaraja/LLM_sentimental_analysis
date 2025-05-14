@@ -406,7 +406,7 @@ def main():
 
             st.subheader("Category Breakdown")
             grouped = data_copy["GPT_Category"].apply(
-                lambda x: "Product quality" if x.startswith("Product quality") else x
+                lambda x: x.split(":", 1)[0].strip() if ":" in x else x
             )
             category_counts = grouped.value_counts()
 
