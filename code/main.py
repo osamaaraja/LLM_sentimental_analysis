@@ -31,17 +31,24 @@ ALL_STOPWORDS = STOPWORDS.union(nltk_stops).union(DOMAIN_STOPS)
 
 # A small template to generate an improvement suggestion
 reco_template = PromptTemplate(
-    input_variables=["category", "pct", "keywords"],
+    input_variables=["category","pct","keywords"],
     template="""
-You are an expert product manager.  
-Category: {category}  
-This category represents {pct:.1f}% of all feedback.  
-Top reported issues: {keywords}.  
+You are a product improvement consultant.  
+Category: {category} ({pct:.1f}% of feedback)  
+Top terms: {keywords}.  
 
-Please write a **single, concise** bullet-point recommendation (1–2 sentences) on how to improve in this area.
+**Task:** In **no more than 15 words**, give exactly ONE concrete action to address these terms in this category.
+
+Examples:
+- Top terms: “battery, charge, life”
+  → “Calibrate firmware to optimize charge cycles and display real‐time battery health.”
+
+- Top terms: “drop, crack, sturdy”
+  → “Reinforce casing corners with ABS polymer to prevent cracks from drops.”
+
+Now for the actual category:
 """
 )
-
 
 load_dotenv()
 openai_api_key = os.getenv('OPEN_API_KEY')
@@ -398,13 +405,17 @@ def main():
             fig_pie.savefig("pie_chart.pdf", format="pdf")
 
             st.subheader("Category Breakdown")
-            category_counts = data_copy["GPT_Category"].value_counts()
-            fig_cat, ax_cat = plt.subplots()
-            ax_cat.bar(category_counts.index, category_counts.values, color='green')
+            grouped = data_copy["GPT_Category"].apply(
+                lambda x: "Product quality" if x.startswith("Product quality") else x
+            )
+            category_counts = grouped.value_counts()
+
+            fig_cat, ax_cat = plt.subplots(figsize=(10, 5))
+            ax_cat.bar(category_counts.index, category_counts.values, color="green")
             ax_cat.set_title("Feedback Categories")
             ax_cat.set_xlabel("Category")
             ax_cat.set_ylabel("Count")
-            ax_cat.tick_params(axis='x', labelrotation=45)  # Rotate x-axis labels
+            ax_cat.tick_params(axis='x', rotation=45)
             fig_cat.tight_layout()
             st.pyplot(fig_cat)
             fig_cat.savefig("category_breakdown.pdf", format="pdf")
@@ -440,7 +451,8 @@ def main():
                 pct = cnt / total * 100
 
                 # gather texts, extract top-3 keywords
-                texts = data_copy.loc[data_copy["GPT_Category"] == cat, text_col].tolist()
+                raw_texts = data_copy.loc[data_copy["GPT_Category"] == cat, text_col]
+                texts = [t for t in raw_texts.astype(str).tolist() if t and t.lower() != 'nan']
                 keywords = get_top_keywords(texts, n=3)
                 keys_str = ", ".join(keywords)
 
