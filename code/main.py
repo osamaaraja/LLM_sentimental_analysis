@@ -1,6 +1,8 @@
 import streamlit as st
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.prompts import PromptTemplate
+from langchain.chains.llm import LLMChain
 import os
 from langchain_community.vectorstores import Chroma
 from langchain.schema import SystemMessage, HumanMessage
@@ -398,9 +400,12 @@ def main():
             pq_mask = data_copy["GPT_Category"].str.startswith("Product quality")
             pq_counts = data_copy.loc[pq_mask, "GPT_Category"].value_counts()
 
+            # strip off the "Product quality:"
+            labels = [cat.split(":", 1)[1].strip() for cat in pq_counts.index]
+
             # Plot the breakdown
             fig_pq, ax_pq = plt.subplots(figsize=(8, 4))
-            ax_pq.bar(pq_counts.index, pq_counts.values, color='salmon')
+            ax_pq.bar(labels, pq_counts.values, color='salmon')
             ax_pq.set_title("Distribution of Product Quality Subcategories")
             ax_pq.set_xlabel("Subcategory")
             ax_pq.set_ylabel("Count")
