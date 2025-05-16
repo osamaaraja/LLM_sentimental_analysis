@@ -471,16 +471,22 @@ def main():
             # Word cloud
             st.subheader("Word Cloud")
 
-            feedback_lines = []
-            for idx, row in data_copy.iterrows():
-                original_text = str(row[text_col])
-                category = str(row["GPT_Category"])
-                category = category.replace(" ", "_").lower()
+            # just the raw feedback sentences
+            raw_feedbacks = data_copy[text_col].astype(str).tolist()
 
-                combined_text = original_text + " " + category
-                feedback_lines.append(combined_text)
+            # generate a clean cloud
+            fig_wc, ax_wc = plt.subplots(figsize=(10, 5))
+            wordcloud = WordCloud(
+                width=800,
+                height=400,
+                background_color="white",
+                stopwords=ALL_STOPWORDS,
+                collocations=False,
+                min_font_size=10
+            ).generate(" ".join(raw_feedbacks))
 
-            fig_wc = generate_cleaned_wordcloud(feedback_lines)
+            ax_wc.imshow(wordcloud, interpolation="bilinear")
+            ax_wc.axis("off")
             st.pyplot(fig_wc)
             fig_wc.savefig("word_cloud.pdf", format="pdf")
 
